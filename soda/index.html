@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Syk — napój gazowany zero cukru</title>
+    <meta name="description" content="Poznaj rześki smak Syk. Zero cukru, zero kompromisów — wiśnia z miętą i jagoda z limonką, zamknięte w jednej smukłej puszce.">
+    <meta name="theme-color" content="#044e3b">
+    <meta property="og:title" content="Syk — napój gazowany zero cukru">
+    <meta property="og:description" content="Interaktywny landing page koncepcyjnej marki napoju. Modele 3D, animacje GSAP, zmiana smaku.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23044e3b'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23fbcfe8' stroke-width='2.5'/%3E%3Ccircle cx='19.5' cy='12.5' r='3' fill='%23fbcfe8'/%3E%3C/svg%3E">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Inter:wght@400;500;600&family=Manrope:wght@400;500;700&family=Lobster&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+
+    <style>
+        /* =========================================================
+           ZMIENNE
+           ========================================================= */
+        :root {
+            --bg-color: #0a0a0a;
+            --text-color: #ffffff;
+            --muted-color: rgba(255, 255, 255, 0.7);
+            --faint-color: rgba(255, 255, 255, 0.45);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Inter', sans-serif;
+            --font-heading: 'Lobster', cursive;
+            --font-ui: 'Manrope', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+
+            /* Tło — zmieniane przez GSAP przy zmianie smaku */
+            --bg-inner: #0b8a78;
+            --bg-mid: #044e3b;
+            --bg-outer: #011411;
+
+            /* Akcent — różowy dla wiśni, lawendowy dla jagody */
+            --accent: #fbcfe8;
+            --on-accent: #011d17;
+            --glow: rgba(16, 185, 129, 0.12);
+
+            --header-h: 6rem;
+            --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        body.blue-theme {
+            --bg-inner: #0b4f8a;
+            --bg-mid: #04294e;
+            --bg-outer: #010c14;
+            --accent: #d9d0ff;
+            --on-accent: #0a1238;
+            --glow: rgba(59, 130, 246, 0.14);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at center, var(--bg-inner) 0%, var(--bg-mid) 50%, var(--bg-outer) 100%);
+            background-color: var(--bg-outer);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            overflow: hidden;
+            overflow: clip;
+            height: 100vh;
+            height: 100dvh;
+            transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-font-smoothing: antialiased;
+            touch-action: pinch-zoom;
+            /* Przycina obróconą puszkę i wielki napis do ekranu —
+               bez tego telefony oddalają stronę */
+            contain: paint;
+            position: relative;
+            width: 100%;
+        }
+
+        button {
+            font: inherit;
+            color: inherit;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+
+        /* =========================================================
+           EKRAN ŁADOWANIA
+           ========================================================= */
+        .loader {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.6rem;
+            background: radial-gradient(circle at center, #0b8a78 0%, #044e3b 50%, #011411 100%);
+        }
+
+        .loader-can {
+            width: 64px;
+            height: 112px;
+            overflow: visible;
+        }
+
+        .loader-can .shell {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.85);
+            stroke-width: 2;
+        }
+
+        .loader-can .liquid {
+            fill: #fbcfe8;
+        }
+
+        .loader-can .fizz {
+            fill: #011d17;
+            opacity: 0.35;
+        }
+
+        .loader-word {
+            font-family: var(--font-heading);
+            font-size: 2.6rem;
+            line-height: 1;
+        }
+
+        .loader-meta {
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--muted-color);
+            display: flex;
+            gap: 0.8rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .no-js .loader,
+        .no-gsap .loader {
+            display: none;
+        }
+
+        /* =========================================================
+           BĄBELKI
+           ========================================================= */
+        #bubbles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bubble-img {
+            position: absolute;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        @keyframes floatUpImg {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: var(--bubble-op, 0.4); }
+            90% { opacity: var(--bubble-op, 0.4); }
+            100% {
+                transform: translateY(-110vh) translateX(30px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Miękka poświata podążająca za kursorem */
+        .cursor-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 620px;
+            height: 620px;
+            margin: -310px 0 0 -310px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.075) 0%, transparent 62%);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            will-change: transform;
+        }
+
+        .cursor-glow.on {
+            opacity: 1;
+        }
+
+        @media (hover: none) {
+            .cursor-glow { display: none; }
+        }
+
+        /* =========================================================
+           NAGŁÓWEK
+           ========================================================= */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 4%;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 200;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-family: var(--font-heading);
+            font-size: 1.7rem;
+            line-height: 1;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo svg .dot {
+            fill: var(--accent);
+            transition: fill 0.6s ease;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.4rem;
+            border-radius: 100px;
+        }
+
+        .nav.glass {
+            position: relative;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .nav-item {
+            font-family: var(--font-ui);
+            color: var(--muted-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.5rem 1.2rem;
+            border-radius: 100px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .cart-btn {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .cart-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            border-radius: 20px;
+            background: var(--accent);
+            color: var(--on-accent);
+            font-family: var(--font-ui);
+            font-size: 0.68rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: scale(0);
+        }
+
+        .contact-btn {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .contact-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .menu-btn {
+            display: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 18px;
+            height: 1.5px;
+            background: white;
+            border-radius: 2px;
+            transition: transform 0.35s var(--ease-out);
+        }
+
+        .menu-open .menu-btn span:first-child { transform: translateY(3.25px) rotate(45deg); }
+        .menu-open .menu-btn span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+
+        /* =========================================================
+           HERO
+           ========================================================= */
+        html {
+            overflow: hidden;
+            overflow: clip;
+        }
+
+        .hero {
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4%;
+            padding-top: 5rem;
+        }
+
+        .hero-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .main-title,
+        .side-title {
+            font-family: var(--font-heading);
+            font-size: clamp(4.5rem, min(9.5vw, 17vh), 11.5rem);
+            line-height: 0.86;
+            font-weight: 400;
+            white-space: nowrap;
+            color: white;
+        }
+
+        .main-title .accent,
+        .side-title .accent {
+            color: var(--accent);
+            transition: color 0.6s ease;
+        }
+
+        /* Linie nagłówka — maska do animacji wejścia */
+        .line {
+            display: block;
+        }
+
+        .reveal .line {
+            overflow: hidden;
+            padding: 0.06em 0.12em 0.2em;
+            margin: -0.06em -0.12em -0.2em;
+        }
+
+        .line-in {
+            display: inline-block;
+        }
+
+        /* Wielkie słowo smaku za puszką */
+        .flavor-word {
+            position: fixed;
+            left: 50%;
+            top: 54%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            pointer-events: none;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: min(25vw, 40vh);
+            line-height: 1;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+            color: transparent;
+            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.13);
+            user-select: none;
+        }
+
+        .flavor-word .ch {
+            display: inline-block;
+            will-change: transform;
+        }
+
+        /* =========================================================
+           LIŚCIE (najdalsze tło)
+           ========================================================= */
+        .leaves-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            transition: transform 0.1s ease-out;
+        }
+
+        .leaf {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            pointer-events: none;
+            z-index: -1;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.2));
+            --progress-bar-color: transparent;
+            --poster-color: transparent;
+        }
+
+        .l1 { top: 10%; left: 15%; }
+        .l2 { top: 40%; left: 80%; width: 140px; height: 140px; opacity: 0.4; }
+        .l3 { top: 70%; left: 75%; width: 80px; height: 80px; }
+        .l4 { top: 85%; left: 20%; width: 120px; height: 120px; opacity: 0.3; }
+
+        /* =========================================================
+           LEWA KOLUMNA
+           ========================================================= */
+        .hero-left {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: clamp(2.5rem, 9vh, 6rem) 0;
+            gap: clamp(1.2rem, 3.2vh, 2rem);
+            z-index: 100;
+            position: relative;
+        }
+
+        .eyebrow {
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--muted-color);
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 28px;
+            height: 1px;
+            background: var(--accent);
+            transition: background 0.6s ease;
+        }
+
+        .description {
+            color: var(--muted-color);
+            font-size: 1.05rem;
+            line-height: 1.65;
+            max-width: 400px;
+        }
+
+        .cta-group {
+            display: flex;
+            align-items: center;
+            gap: 1.6rem;
+        }
+
+        .primary-btn {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.4rem 0.4rem 1.5rem;
+            border-radius: 100px;
+            font-weight: 700;
+            cursor: pointer;
+            width: fit-content;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .primary-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: translateY(-3px);
+        }
+
+        .plus-icon {
+            background: var(--accent);
+            color: var(--on-accent);
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            font-weight: 900;
+            line-height: 1;
+            padding-bottom: 2px;
+            transition: background 0.6s ease, transform 0.5s var(--ease-out);
+        }
+
+        .primary-btn:hover .plus-icon {
+            transform: rotate(90deg);
+        }
+
+        .ghost-link {
+            font-family: var(--font-ui);
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--muted-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+            transition: color 0.3s ease, border-color 0.3s ease, gap 0.3s ease;
+        }
+
+        .ghost-link:hover {
+            color: white;
+            border-color: var(--accent);
+            gap: 0.8rem;
+        }
+
+        .award-badge {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: auto;
+        }
+
+        .award-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            transition: color 0.6s ease;
+        }
+
+        .award-text { display: flex; flex-direction: column; gap: 0.1rem; }
+        .award-title { font-size: 0.7rem; letter-spacing: 0.1em; color: var(--muted-color); }
+        .award-subtitle { font-size: 0.85rem; font-weight: 600; }
+
+        /* =========================================================
+           JAGODY / WIŚNIE
+           ========================================================= */
+        .berries-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 110;
+            transition: transform 0.1s ease-out;
+        }
+
+        .berries-container-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            transition: transform 0.1s ease-out;
+        }
+
+        .berry {
+            --s: 120px;
+            position: absolute;
+            width: calc(var(--s) * var(--berry-scale, 1));
+            height: calc(var(--s) * var(--berry-scale, 1));
+            outline: none;
+            --progress-bar-color: transparent;
+            --poster-color: transparent;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform: scale(0);
+        }
+
+        .b1 { top: 25%; left: 30%; --s: 220px; }
+        .b2 { top: 60%; left: 42%; --s: 100px; }
+        .b3 { top: 30%; left: 62%; --s: 250px; }
+        .b4 { top: 15%; left: 48%; --s: 140px; }
+        .b5 { top: 75%; left: 20%; --s: 120px; }
+        .b6 { top: 45%; left: 75%; --s: 180px; }
+        .b7 { top: 15%; left: 40%; --s: 80px; opacity: 0.7; }
+        .b8 { top: 50%; left: 55%; --s: 70px; opacity: 0.6; }
+        .b9 { top: 80%; left: 35%; --s: 75px; opacity: 0.7; }
+
+        /* =========================================================
+           PUSZKA
+           ========================================================= */
+        .hero-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            background: radial-gradient(circle at center, var(--glow) 0%, transparent 70%);
+        }
+
+        .no-gsap .hero-center { opacity: 1; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .main-product-3d {
+            --can-rot: 25deg;
+            --can-scale: 1;
+            width: 80vw;
+            height: 80vh;
+            outline: none;
+            --progress-bar-color: transparent;
+            --poster-color: transparent;
+            z-index: 1;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(var(--can-rot)) scale(var(--can-scale));
+            pointer-events: auto;
+            touch-action: none;
+            background: transparent;
+        }
+
+        .drag-hint {
+            position: fixed;
+            left: 50%;
+            bottom: 4.4rem;
+            transform: translateX(-50%);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.5rem 0.95rem 0.5rem 0.7rem;
+            border-radius: 100px;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            color: var(--muted-color);
+            pointer-events: none;
+            white-space: nowrap;
+            opacity: 0;
+        }
+
+        .drag-hint svg {
+            animation: nudge 2.4s ease-in-out infinite;
+        }
+
+        @keyframes nudge {
+            0%, 100% { transform: translateX(-2px); }
+            50% { transform: translateX(3px); }
+        }
+
+        /* =========================================================
+           PRAWA KOLUMNA
+           ========================================================= */
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-end;
+            text-align: right;
+            height: 100%;
+            padding: clamp(2.5rem, 9vh, 6rem) 0;
+            z-index: 100;
+            width: 450px;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .product-carousel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.3rem;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+
+        .carousel-cards { display: flex; gap: 1rem; }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            padding-top: 5rem;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            cursor: pointer;
+            transition: background 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        border-color 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 135px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        @media (hover: hover) {
+            .card:hover {
+                background: rgba(255, 255, 255, 0.12);
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+
+            .card:hover img {
+                transform: translateY(-30px) rotate(-12deg) scale(1.15);
+            }
+        }
+
+        .card.active {
+            border-color: var(--accent);
+            background: var(--glass-bg);
+        }
+
+        .card img {
+            width: 140px;
+            height: auto;
+            margin-top: -8rem;
+            filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.5));
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: block;
+            will-change: transform;
+            pointer-events: none;
+        }
+
+        .card:focus-visible img {
+            transform: translateY(-30px) rotate(-12deg) scale(1.15);
+        }
+
+        .card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            font-size: 0.7rem;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .card-info span:first-child { font-weight: 600; }
+        .card-info span:last-child { color: var(--muted-color); }
+
+        .carousel-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flavor-meta {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            font-family: var(--font-ui);
+            margin-right: 0.4rem;
+        }
+
+        .flavor-index {
+            font-size: 0.78rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            display: inline-flex;
+            gap: 0.25rem;
+        }
+
+        .flavor-index .cur {
+            color: var(--accent);
+            display: inline-block;
+            transition: color 0.6s ease;
+        }
+
+        .flavor-index .total { color: var(--faint-color); }
+
+        .flavor-name {
+            font-size: 0.78rem;
+            color: var(--muted-color);
+            display: inline-block;
+            min-width: 8.5em;
+            text-align: left;
+        }
+
+        .nav-arrow {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
+        .side-title { align-self: flex-end; text-align: right; }
+
+        /* =========================================================
+           PASEK NA DOLE
+           ========================================================= */
+        .ticker {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2.6rem;
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.25), transparent);
+            pointer-events: none;
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+        }
+
+        .ticker-track {
+            display: flex;
+            flex-shrink: 0;
+            animation: ticker 48s linear infinite;
+        }
+
+        .ticker-track span {
+            font-family: var(--font-ui);
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--faint-color);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 2.2rem;
+            padding-right: 2.2rem;
+        }
+
+        .ticker-track i {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            display: inline-block;
+            transition: border-color 0.6s ease;
+        }
+
+        @keyframes ticker {
+            to { transform: translateX(-50%); }
+        }
+
+        /* Powiadomienie o koszyku */
+        .toast {
+            position: fixed;
+            left: 50%;
+            top: 6.6rem;
+            z-index: 300;
+            transform: translateX(-50%);
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.65rem 1.1rem 0.65rem 0.65rem;
+            border-radius: 100px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        .toast .tick {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--on-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast b { font-weight: 600; }
+
+        @keyframes shine {
+            from { transform: translateX(-100%) rotate(45deg); }
+            to { transform: translateX(200%) rotate(45deg); }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        /* Elementy animowane wejściem są ukryte do startu intro */
+        .js:not(.no-gsap) [data-intro] {
+            opacity: 0;
+        }
+
+        /* =========================================================
+           RESPONSYWNOŚĆ
+           ========================================================= */
+        @media (max-width: 1200px) {
+            .main-product-3d { width: 100vw; height: 64vh; }
+            .hero-right { width: 360px; }
+            .nav-item { padding: 0.5rem 0.9rem; }
+            .berries-container, .berries-container-bg { --berry-scale: 0.8; }
+            .description br { display: none; }
+            .description { max-width: 340px; }
+        }
+
+        @media (min-width: 961px) and (max-height: 780px) {
+            .main-title,
+            .side-title { font-size: clamp(4rem, min(9.5vw, 15vh), 11.5rem); }
+            .hero-left,
+            .hero-right { padding: clamp(2rem, 7vh, 6rem) 0; }
+            .card { padding-top: 3.6rem; gap: 1rem; }
+            .card img { width: 104px; margin-top: -6rem; }
+            .product-carousel { gap: 1rem; }
+        }
+
+        @media (max-width: 960px) {
+            .header { padding: 1.2rem 5%; }
+            .nav.glass {
+                position: absolute;
+                top: calc(100% - 0.2rem);
+                right: 5%;
+                flex-direction: column;
+                gap: 0.2rem;
+                padding: 0.5rem;
+                border-radius: 22px;
+                background: rgba(1, 20, 17, 0.72);
+                min-width: 200px;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-8px) scale(0.98);
+                transform-origin: top right;
+                transition: opacity 0.3s ease, transform 0.35s var(--ease-out), visibility 0s linear 0.35s;
+            }
+            .blue-theme .nav.glass { background: rgba(1, 12, 20, 0.72); }
+            .menu-open .nav.glass {
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                transition: opacity 0.3s ease, transform 0.35s var(--ease-out), visibility 0s;
+            }
+            .nav-item { padding: 0.75rem 1rem; font-size: 0.95rem; }
+            .menu-btn { display: flex; }
+            .contact-btn { display: none; }
+
+            .hero { padding: 0 5%; padding-top: 5.2rem; }
+            .hero-content { flex-direction: column; justify-content: space-between; }
+
+            .main-title { font-size: clamp(3.4rem, min(15vw, 10vh), 6rem); }
+            .hero-left { height: auto; padding: 1rem 0 0; gap: 1rem; }
+            .hero-left .description { font-size: 0.92rem; max-width: 300px; }
+            .award-badge, .ghost-link { display: none; }
+            .eyebrow { font-size: 0.64rem; }
+
+            .hero-right {
+                width: 100%;
+                height: auto;
+                padding: 0 0 3.6rem;
+                align-items: center;
+                text-align: center;
+            }
+            .side-title { display: none; }
+            .product-carousel { align-items: center; gap: 0.9rem; }
+            .carousel-cards { gap: 0.6rem; }
+            .card {
+                flex-direction: row;
+                width: auto;
+                padding: 0.4rem 1rem 0.4rem 0.45rem;
+                gap: 0.55rem;
+                border-radius: 100px;
+                text-align: left;
+            }
+            .card img { width: 26px; margin: -0.9rem 0 -0.5rem; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
+            .card[data-flavor="jagoda"] img { filter: brightness(0.7) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)) !important; }
+            .card.active img { transform: rotate(-12deg) scale(1.1); }
+            .card-info { width: auto; white-space: nowrap; font-size: 0.72rem; }
+            .flavor-name { min-width: 0; }
+
+            .main-product-3d { width: 100vw; height: 56vh; top: 52%; }
+            .flavor-word { top: 51%; font-size: 21vw; }
+            .drag-hint { display: none; }
+            .berries-container { z-index: 60; }
+            .berries-container, .berries-container-bg { --berry-scale: 0.45; }
+            .leaf { display: none; }
+        }
+
+        @media (max-width: 960px) and (max-height: 640px) {
+            .hero-left .description { display: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hero-center { animation: none; }
+            .ticker-track { animation-duration: 160s; }
+        }
+    </style>
+    <script>
+        document.documentElement.classList.add('js');
+        if (!window.gsap) document.documentElement.classList.add('no-gsap');
+    </script>
+</head>
+
+<body>
+    <!-- Ekran ładowania -->
+    <div class="loader" aria-hidden="true">
+        <svg class="loader-can" viewBox="0 0 64 112">
+            <defs>
+                <clipPath id="can-clip">
+                    <path d="M12 8h40l6 10v80a10 10 0 0 1-10 10H16A10 10 0 0 1 6 98V18z" />
+                </clipPath>
+            </defs>
+            <g clip-path="url(#can-clip)">
+                <rect class="liquid" x="0" y="112" width="64" height="112" />
+                <circle class="fizz" cx="22" cy="100" r="2.4" />
+                <circle class="fizz" cx="40" cy="92" r="1.6" />
+                <circle class="fizz" cx="31" cy="104" r="1.2" />
+            </g>
+            <path class="shell" d="M12 8h40l6 10v80a10 10 0 0 1-10 10H16A10 10 0 0 1 6 98V18z" />
+            <path class="shell" d="M6 18h52M6 96h52" opacity="0.35" />
+            <path class="shell" d="M25 3h14" stroke-linecap="round" />
+        </svg>
+        <div class="loader-word">syk.</div>
+        <div class="loader-meta"><span>Nalewamy</span><span class="loader-pct">0%</span></div>
+    </div>
+
+    <div id="bubbles-container"></div>
+    <div class="cursor-glow"></div>
+
+    <header class="header">
+        <a href="#" class="logo" aria-label="Syk — strona główna" data-intro>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="2.2" />
+                <circle class="dot" cx="20" cy="11.5" r="3.4" />
+                <circle cx="12" cy="19" r="2" fill="currentColor" />
+                <circle cx="17.5" cy="22" r="1.2" fill="currentColor" />
+            </svg>
+            <span>syk</span>
+        </a>
+        <nav class="nav glass" id="main-nav" aria-label="Główna nawigacja" data-intro>
+            <a href="#" class="nav-item active" aria-current="page">Start</a>
+            <a href="#" class="nav-item">Skład</a>
+            <a href="#" class="nav-item">Smaki</a>
+            <a href="#" class="nav-item">Eko</a>
+            <a href="#" class="nav-item">Opinie</a>
+        </nav>
+        <div class="header-actions" data-intro>
+            <button class="cart-btn" aria-label="Koszyk">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 8h14l-1.2 11.1A2 2 0 0 1 15.8 21H8.2a2 2 0 0 1-2-1.9L5 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                    <path d="M9 10V6.5a3 3 0 0 1 6 0V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                <span class="cart-count">0</span>
+            </button>
+            <button class="contact-btn">Napisz do nas</button>
+            <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="main-nav">
+                <span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <main class="hero">
+        <div class="hero-content">
+
+            <div class="flavor-word" aria-hidden="true"></div>
+
+            <!-- Liście -->
+            <div class="leaves-container" aria-hidden="true">
+                <model-viewer class="leaf l1" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="45deg 75deg 105%"></model-viewer>
+                <model-viewer class="leaf l2" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="-30deg 60deg 105%"></model-viewer>
+                <model-viewer class="leaf l3" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="120deg 85deg 105%"></model-viewer>
+                <model-viewer class="leaf l4" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/leaves.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="10deg 45deg 105%"></model-viewer>
+            </div>
+
+            <!-- Lewa kolumna -->
+            <div class="hero-left">
+                <h1 class="main-title reveal">
+                    <span class="line"><span class="line-in">Zero</span></span>
+                    <span class="line"><span class="line-in accent">cukru.</span></span>
+                </h1>
+                <p class="description" data-intro>
+                    Rześki smak bez grama cukru. <br>
+                    Orzeźwienie zamknięte w każdym bąbelku — <br>
+                    i w jednej smukłej puszce.
+                </p>
+                <div class="cta-group" data-intro>
+                    <button class="primary-btn">
+                        Kup teraz
+                        <span class="plus-icon" aria-hidden="true">+</span>
+                    </button>
+                    <a href="#" class="ghost-link">Skład i wartości <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="award-badge" data-intro>
+                    <div class="award-icon" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 3.5l2.4 5 5.4.6-4 3.7 1.1 5.4L12 15.5l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6L12 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="award-text">
+                        <span class="award-title">WYRÓŻNIENIE</span>
+                        <span class="award-subtitle">Opakowanie Roku 2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Owoce w tle -->
+            <div class="berries-container-bg" aria-hidden="true">
+                <model-viewer class="berry b7" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="-20deg 110deg 105%"></model-viewer>
+                <model-viewer class="berry b8" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="160deg 45deg 105%"></model-viewer>
+                <model-viewer class="berry b9" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.0" interaction-prompt="none" camera-orbit="45deg 20deg 105%"></model-viewer>
+            </div>
+
+            <!-- Puszka 3D -->
+            <div class="hero-center">
+                <model-viewer id="product-model"
+                    src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/deit_soda2.glb"
+                    alt="Puszka napoju Syk w 3D — przeciągnij, aby obrócić"
+                    disable-zoom disable-pan shadow-intensity="0" environment-image="neutral" exposure="1.5"
+                    interaction-prompt="none" camera-orbit="0deg 90deg 380%" field-of-view="30deg"
+                    loading="eager" class="main-product-3d">
+                </model-viewer>
+            </div>
+            <div class="drag-hint" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 12h16M15 7l5 5-5 5M9 7l-5 5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Przeciągnij puszkę, by ją obrócić
+            </div>
+
+            <!-- Owoce na pierwszym planie -->
+            <div class="berries-container" aria-hidden="true">
+                <model-viewer class="berry b1" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.2" interaction-prompt="none" camera-orbit="45deg 120deg 105%"></model-viewer>
+                <model-viewer class="berry b2" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.2" interaction-prompt="none" camera-orbit="-120deg 45deg 105%"></model-viewer>
+                <model-viewer class="berry b3" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.2" interaction-prompt="none" camera-orbit="200deg 90deg 105%"></model-viewer>
+                <model-viewer class="berry b4" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.2" interaction-prompt="none" camera-orbit="10deg 20deg 105%"></model-viewer>
+                <model-viewer class="berry b5" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.2" interaction-prompt="none" camera-orbit="-45deg 160deg 105%"></model-viewer>
+                <model-viewer class="berry b6" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb" environment-image="neutral" exposure="1.2" interaction-prompt="none" camera-orbit="80deg 75deg 105%"></model-viewer>
+            </div>
+
+            <!-- Prawa kolumna -->
+            <div class="hero-right">
+                <div class="product-carousel" data-intro>
+                    <div class="carousel-cards" role="group" aria-label="Wybierz smak">
+                        <button class="card active" data-flavor="wisnia" aria-pressed="true">
+                            <img src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/Green%20Soda.png" alt="">
+                            <span class="card-info">
+                                <span>Wiśnia &amp; mięta</span>
+                                <span>4,99 zł</span>
+                            </span>
+                        </button>
+                        <button class="card" data-flavor="jagoda" aria-pressed="false">
+                            <img src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/Blue%20Soda.png" alt="" style="filter: brightness(0.7) drop-shadow(0 20px 35px rgba(0, 0, 0, 0.5));">
+                            <span class="card-info">
+                                <span>Jagoda &amp; limonka</span>
+                                <span>4,99 zł</span>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="carousel-nav">
+                        <div class="flavor-meta" aria-live="polite">
+                            <span class="flavor-index"><span class="cur">01</span><span class="total">/ 02</span></span>
+                            <span class="flavor-name">Wiśnia &amp; mięta</span>
+                        </div>
+                        <button class="nav-arrow" data-dir="-1" aria-label="Poprzedni smak">←</button>
+                        <button class="nav-arrow" data-dir="1" aria-label="Następny smak">→</button>
+                    </div>
+                </div>
+                <h2 class="side-title reveal">
+                    <span class="line"><span class="line-in">Same</span></span>
+                    <span class="line"><span class="line-in accent">bąbelki.</span></span>
+                </h2>
+            </div>
+        </div>
+    </main>
+
+    <div class="ticker" aria-hidden="true" data-intro>
+        <div class="ticker-track"></div>
+    </div>
+
+    <div class="toast" role="status" aria-live="polite">
+        <span class="tick" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </span>
+        <span>Dodano do koszyka — <b class="toast-flavor">Wiśnia &amp; mięta</b></span>
+    </div>
+
+    <svg style="position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;" aria-hidden="true">
+        <filter id="frosted">
+            <feTurbulence type="fractalNoise" baseFrequency="0.0125" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="80" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+    <div style="display: none;" aria-hidden="true">
+        <!-- Wczesne wczytanie modeli owoców, żeby zmiana smaku nie przycinała -->
+        <model-viewer loading="eager" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/blueberry.glb"></model-viewer>
+        <model-viewer loading="eager" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d/cherry.glb"></model-viewer>
+    </div>
+
+    <script>
+    (() => {
+        // =========================================================
+        // STAŁE
+        // =========================================================
+        const ASSET_BASE_URL = 'https://api.getlayers.ai/storage/v1/object/public/public/assets/soda-14ff8a788d';
+        const ASSETS = {
+            cherry: `${ASSET_BASE_URL}/cherry.glb`,
+            blueberry: `${ASSET_BASE_URL}/blueberry.glb`,
+            greenTexture: `${ASSET_BASE_URL}/green%20base%20color.jpg`,
+            blueTexture: `${ASSET_BASE_URL}/blue%20base%20color.jpg`,
+            bubble: `${ASSET_BASE_URL}/bubble.png`
+        };
+
+        const FLAVORS = [
+            {
+                id: 'wisnia',
+                name: 'Wiśnia & mięta',
+                word: 'WIŚNIA',
+                blue: false,
+                berry: ASSETS.cherry,
+                vars: {
+                    '--bg-inner': '#0b8a78', '--bg-mid': '#044e3b', '--bg-outer': '#011411',
+                    '--accent': '#fbcfe8', '--on-accent': '#011d17', '--glow': 'rgba(16, 185, 129, 0.12)'
+                },
+                themeColor: '#044e3b'
+            },
+            {
+                id: 'jagoda',
+                name: 'Jagoda & limonka',
+                word: 'JAGODA',
+                blue: true,
+                berry: ASSETS.blueberry,
+                vars: {
+                    '--bg-inner': '#0b4f8a', '--bg-mid': '#04294e', '--bg-outer': '#010c14',
+                    '--accent': '#d9d0ff', '--on-accent': '#0a1238', '--glow': 'rgba(59, 130, 246, 0.14)'
+                },
+                themeColor: '#04294e'
+            }
+        ];
+
+        const TICKER_ITEMS = [
+            '0 kcal', '0 g cukru', '330 ml', 'naturalne aromaty', '100% wegańskie',
+            'puszka z recyklingu', 'wyprodukowano w Polsce', 'projekt koncepcyjny — marka fikcyjna'
+        ];
+
+        const hasGsap = !!window.gsap;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+        // =========================================================
+        // ELEMENTY
+        // =========================================================
+        const body = document.body;
+        const modelViewer = document.querySelector('#product-model');
+        const heroCenter = document.querySelector('.hero-center');
+        const berriesFG = document.querySelector('.berries-container');
+        const berriesBG = document.querySelector('.berries-container-bg');
+        const leavesBG = document.querySelector('.leaves-container');
+        const allBerries = Array.from(document.querySelectorAll('.berry'));
+        const leaves = Array.from(document.querySelectorAll('.leaf'));
+        const cards = Array.from(document.querySelectorAll('.card'));
+        const arrows = document.querySelectorAll('.nav-arrow');
+        const flavorWord = document.querySelector('.flavor-word');
+        const flavorIndexEl = document.querySelector('.flavor-index .cur');
+        const flavorNameEl = document.querySelector('.flavor-name');
+        const glowEl = document.querySelector('.cursor-glow');
+        const dragHint = document.querySelector('.drag-hint');
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+        let currentFlavor = 0;
+        let isSwitching = false;
+        let switchSpin = 0;
+        let blueTexture = null;
+        let greenTexture = null;
+        let texturedMaterials = [];
+
+        // =========================================================
+        // TEKSTURY PUSZKI (+ rozgrzanie shaderów)
+        // =========================================================
+        modelViewer.addEventListener('load', async () => {
+            try {
+                const materials = modelViewer.model ? modelViewer.model.materials : [];
+                // Podmieniamy tylko materiały, które mają własną teksturę koloru (etykieta puszki)
+                texturedMaterials = materials.filter(m => m.pbrMetallicRoughness.baseColorTexture && m.pbrMetallicRoughness.baseColorTexture.texture);
+                if (!texturedMaterials.length && materials[0]) texturedMaterials = [materials[0]];
+
+                [blueTexture, greenTexture] = await Promise.all([
+                    modelViewer.createTexture(ASSETS.blueTexture),
+                    modelViewer.createTexture(ASSETS.greenTexture)
+                ]);
+
+                // Krótkie nałożenie niebieskiej tekstury kompiluje shadery,
+                // dzięki czemu pierwsza zmiana smaku nie przycina.
+                applyCanTexture(blueTexture);
+                await new Promise(r => requestAnimationFrame(r));
+                applyCanTexture(FLAVORS[currentFlavor].blue ? blueTexture : greenTexture);
+            } catch (e) {
+                console.error('Nie udało się wczytać tekstur puszki', e);
+            }
+        });
+
+        function applyCanTexture(texture) {
+            if (!texture) return;
+            texturedMaterials.forEach(material => {
+                const info = material.pbrMetallicRoughness.baseColorTexture;
+                if (info) info.setTexture(texture);
+            });
+        }
+
+        // =========================================================
+        // WIELKIE SŁOWO SMAKU
+        // =========================================================
+        function renderWord(word) {
+            flavorWord.innerHTML = '';
+            for (const ch of word) {
+                const span = document.createElement('span');
+                span.className = 'ch';
+                span.textContent = ch;
+                flavorWord.appendChild(span);
+            }
+            return flavorWord.querySelectorAll('.ch');
+        }
+        renderWord(FLAVORS[0].word);
+
+        function swapWord(word) {
+            if (!hasGsap || reduceMotion) { renderWord(word); return; }
+            const oldChars = flavorWord.querySelectorAll('.ch');
+            gsap.to(oldChars, {
+                yPercent: -60,
+                opacity: 0,
+                duration: 0.45,
+                ease: 'power2.in',
+                stagger: 0.035,
+                onComplete: () => {
+                    const chars = renderWord(word);
+                    gsap.fromTo(chars,
+                        { yPercent: 70, opacity: 0 },
+                        { yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.045 }
+                    );
+                }
+            });
+        }
+
+        // =========================================================
+        // PASEK NA DOLE
+        // =========================================================
+        (function buildTicker() {
+            const track = document.querySelector('.ticker-track');
+            const html = TICKER_ITEMS.map(t => `${t} <i></i>`).join(' ');
+            // Dwie identyczne kopie => płynna pętla przy przesunięciu o -50%
+            track.innerHTML = `<span>${html}</span><span>${html}</span>`;
+        })();
+
+        // =========================================================
+        // ZMIANA SMAKU
+        // =========================================================
+        function selectFlavor(index) {
+            index = (index + FLAVORS.length) % FLAVORS.length;
+            if (isSwitching || index === currentFlavor) return;
+            currentFlavor = index;
+            const flavor = FLAVORS[index];
+
+            cards.forEach(c => {
+                const on = c.dataset.flavor === flavor.id;
+                c.classList.toggle('active', on);
+                c.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            flavorIndexEl.textContent = String(index + 1).padStart(2, '0');
+            flavorNameEl.textContent = flavor.name;
+            document.querySelector('.toast-flavor').textContent = flavor.name;
+            if (themeMeta) themeMeta.setAttribute('content', flavor.themeColor);
+
+            switchFlavor(flavor);
+        }
+
+        cards.forEach((card, i) => card.addEventListener('click', () => selectFlavor(i)));
+        arrows.forEach(btn => btn.addEventListener('click', () => selectFlavor(currentFlavor + Number(btn.dataset.dir))));
+        window.addEventListener('keydown', e => {
+            if (e.target.closest && e.target.closest('input, textarea')) return;
+            if (e.key === 'ArrowRight') selectFlavor(currentFlavor + 1);
+            if (e.key === 'ArrowLeft') selectFlavor(currentFlavor - 1);
+        });
+
+        function switchFlavor(flavor) {
+            // Bez GSAP: natychmiastowa zmiana
+            if (!hasGsap) {
+                body.classList.toggle('blue-theme', flavor.blue);
+                applyCanTexture(flavor.blue ? blueTexture : greenTexture);
+                allBerries.forEach(b => { b.src = flavor.berry; });
+                renderWord(flavor.word);
+                return;
+            }
+
+            isSwitching = true;
+
+            // 1. Tło i akcent
+            gsap.to(body, { ...flavor.vars, duration: 1.5, ease: 'power2.inOut' });
+
+            // 2. Obrót puszki 720° z rozmyciem, podmiana tekstury w szczycie
+            const spinObj = { val: 0, blur: 0 };
+            const peakBlur = reduceMotion ? 0 : 15;
+            gsap.to(spinObj, {
+                val: 360,
+                blur: peakBlur,
+                duration: 0.6,
+                ease: 'power2.in',
+                onUpdate: () => {
+                    switchSpin = spinObj.val;
+                    modelViewer.style.filter = `blur(${spinObj.blur}px)`;
+                },
+                onComplete: () => {
+                    body.classList.toggle('blue-theme', flavor.blue);
+                    applyCanTexture(flavor.blue ? blueTexture : greenTexture);
+
+                    gsap.to(spinObj, {
+                        val: 720,
+                        blur: 0,
+                        duration: 1.5,
+                        ease: 'back.out(0.7)',
+                        onUpdate: () => {
+                            switchSpin = spinObj.val;
+                            modelViewer.style.filter = `blur(${spinObj.blur}px)`;
+                        },
+                        onComplete: () => {
+                            switchSpin = 0;
+                            modelViewer.style.filter = 'none';
+                        }
+                    });
+                }
+            });
+
+            // 3. Słowo w tle + chmurka bąbelków
+            swapWord(flavor.word);
+            burst(28);
+
+            // 4. Owoce: zassanie do środka, podmiana modelu, wybuch na nowe pozycje
+            let completed = 0;
+            allBerries.forEach(berry => {
+                const parentRect = berry.parentElement.getBoundingClientRect();
+                const bW = berry.offsetWidth / 2;
+                const bH = berry.offsetHeight / 2;
+                const centerX = window.innerWidth / 2 - (parentRect.left + berry.offsetLeft + bW);
+                const centerY = window.innerHeight / 2 - (parentRect.top + berry.offsetTop + bH);
+
+                const startAngle = parseFloat(berry.dataset.angle) || 0;
+                const rx = parseFloat(berry.dataset.rx) || 0;
+                const ry = parseFloat(berry.dataset.ry) || 0;
+                const baseX = parseFloat(berry.dataset.baseX) || 0;
+                const baseY = parseFloat(berry.dataset.baseY) || 0;
+                const restOpacity = parseFloat(berry.dataset.op) || 1;
+
+                const nextBaseX = (Math.random() - 0.5) * 200;
+                const nextBaseY = (Math.random() - 0.5) * 200;
+
+                gsap.set(berry, { rotation: startAngle, x: rx + baseX, y: ry + baseY, scale: 1 });
+
+                gsap.timeline()
+                    .to(berry, {
+                        x: centerX,
+                        y: centerY,
+                        rotation: startAngle + 45,
+                        scale: 0.1,
+                        opacity: 0,
+                        duration: 0.5,
+                        ease: 'power2.in',
+                        onComplete: () => {
+                            berry.src = flavor.berry;
+                            heroCenter.style.zIndex = 50;
+                        }
+                    })
+                    .to(berry, { duration: 0.3 })
+                    .to(berry, {
+                        onStart: () => { heroCenter.style.zIndex = 1; },
+                        x: nextBaseX,
+                        y: nextBaseY,
+                        rotation: startAngle + 90,
+                        scale: 1,
+                        opacity: restOpacity,
+                        duration: 0.9,
+                        ease: 'back.out(1.5)',
+                        onComplete: () => {
+                            berry.dataset.angle = startAngle + 90;
+                            berry.dataset.baseX = nextBaseX;
+                            berry.dataset.baseY = nextBaseY;
+                            berry.dataset.rx = 0;
+                            berry.dataset.ry = 0;
+                            completed++;
+                            if (completed === allBerries.length) isSwitching = false;
+                        }
+                    });
+            });
+        }
+
+        // =========================================================
+        // STAN OWOCÓW
+        // =========================================================
+        const pop = allBerries.map(() => ({ v: hasGsap ? 0 : 1 }));
+        allBerries.forEach(b => {
+            b.dataset.rx = 0; b.dataset.ry = 0; b.dataset.angle = Math.random() * 360;
+            b.dataset.baseX = 0; b.dataset.baseY = 0;
+            b.dataset.op = getComputedStyle(b).opacity;
+        });
+
+        // =========================================================
+        // WSKAŹNIK (mysz i dotyk)
+        // =========================================================
+        const mouse = { x: 0, y: 0, px: -9999, py: -9999 };
+        const currentMouse = { x: 0, y: 0 };
+        const glowPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+        function onPointer(e) {
+            mouse.x = (e.clientX / window.innerWidth) - 0.5;
+            mouse.y = (e.clientY / window.innerHeight) - 0.5;
+            mouse.px = e.clientX;
+            mouse.py = e.clientY;
+            if (finePointer) glowEl.classList.add('on');
+        }
+        window.addEventListener('pointermove', onPointer, { passive: true });
+        window.addEventListener('pointerdown', onPointer, { passive: true });
+        window.addEventListener('pointerup', e => {
+            if (e.pointerType !== 'mouse') { mouse.px = -9999; mouse.py = -9999; }
+        });
+        document.documentElement.addEventListener('pointerleave', () => {
+            mouse.px = -9999; mouse.py = -9999;
+            glowEl.classList.remove('on');
+        });
+
+        // =========================================================
+        // OBRACANIE PUSZKI (przeciąganie z bezwładnością)
+        // =========================================================
+        const drag = { active: false, id: null, lastX: 0, vel: 0, spin: 0, used: false };
+
+        function overCan(x, y) {
+            const r = modelViewer.getBoundingClientRect();
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+            const rx = Math.max(90, Math.min(window.innerWidth * 0.13, 220));
+            const ry = Math.min(window.innerHeight * 0.36, 360);
+            const dx = (x - cx) / rx;
+            const dy = (y - cy) / ry;
+            return dx * dx + dy * dy < 1;
+        }
+
+        modelViewer.addEventListener('pointerdown', e => {
+            if (!overCan(e.clientX, e.clientY)) return;
+            drag.active = true;
+            drag.id = e.pointerId;
+            drag.lastX = e.clientX;
+            drag.vel = 0;
+            modelViewer.setPointerCapture(e.pointerId);
+            modelViewer.style.cursor = 'grabbing';
+            if (!drag.used) {
+                drag.used = true;
+                if (hasGsap) {
+                    gsap.killTweensOf(dragHint);
+                    gsap.to(dragHint, { opacity: 0, y: 10, duration: 0.5 });
+                }
+            }
+        });
+
+        modelViewer.addEventListener('pointermove', e => {
+            if (drag.active && e.pointerId === drag.id) {
+                const dx = e.clientX - drag.lastX;
+                drag.lastX = e.clientX;
+                drag.spin += dx * 0.6;
+                drag.vel = dx * 0.6;
+            } else {
+                modelViewer.style.cursor = overCan(e.clientX, e.clientY) ? 'grab' : '';
+            }
+        });
+
+        const endDrag = e => {
+            if (!drag.active || e.pointerId !== drag.id) return;
+            drag.active = false;
+            modelViewer.style.cursor = 'grab';
+        };
+        modelViewer.addEventListener('pointerup', endDrag);
+        modelViewer.addEventListener('pointercancel', endDrag);
+
+        // dt = 1 przy 60 kl./s — bezwładność działa tak samo przy 30, 60 i 120 Hz
+        function updateDrag(dt) {
+            if (drag.active) {
+                drag.vel *= Math.pow(0.6, dt); // brak ruchu = brak rozpędu po puszczeniu
+                return;
+            }
+            if (Math.abs(drag.vel) > 0.05) {
+                drag.spin += drag.vel * dt;
+                drag.vel *= Math.pow(0.95, dt);
+            } else {
+                // Łagodny powrót puszki przodem do widza
+                const target = Math.round(drag.spin / 360) * 360;
+                drag.spin += (target - drag.spin) * (1 - Math.pow(1 - 0.035, dt));
+                if (Math.abs(target - drag.spin) < 0.01) drag.spin = target % 360;
+            }
+        }
+
+        // =========================================================
+        // PĘTLA ANIMACJI
+        // =========================================================
+        const berryDurations = [5, 7, 6, 8, 5.5, 6.5, 9, 11, 10];
+        const floatAmp = reduceMotion ? 0.3 : 1;
+
+        let lastFrame = performance.now();
+
+        function animate() {
+            const time = Date.now() * 0.001;
+            const now = performance.now();
+            const dt = Math.min(now - lastFrame, 100) / (1000 / 60);
+            lastFrame = now;
+
+            currentMouse.x += (mouse.x - currentMouse.x) * 0.05;
+            currentMouse.y += (mouse.y - currentMouse.y) * 0.05;
+
+            updateDrag(dt);
+
+            // Puszka wychyla się w stronę kursora (+ obrót przy zmianie smaku i przeciąganiu)
+            modelViewer.cameraOrbit = `${(currentMouse.x * 40) + switchSpin + drag.spin}deg ${90 + (currentMouse.y * 20)}deg 380%`;
+
+            // Paralaksa warstw
+            berriesFG.style.transform = `translate(${currentMouse.x * 60}px, ${currentMouse.y * 60}px)`;
+            berriesBG.style.transform = `translate(${currentMouse.x * -30}px, ${currentMouse.y * -30}px)`;
+            leavesBG.style.transform = `translate(${currentMouse.x * -15}px, ${currentMouse.y * -15}px)`;
+
+            // Poświata za kursorem
+            if (finePointer && mouse.px > -9000) {
+                glowPos.x += (mouse.px - glowPos.x) * 0.12;
+                glowPos.y += (mouse.py - glowPos.y) * 0.12;
+                glowEl.style.transform = `translate(${glowPos.x}px, ${glowPos.y}px)`;
+            }
+
+            // Owoce: odpychanie od kursora + unoszenie (najpierw odczyt, potem zapis)
+            if (!isSwitching) {
+                const rects = allBerries.map(b => b.getBoundingClientRect());
+                allBerries.forEach((berry, i) => {
+                    const rect = rects[i];
+                    const diffX = mouse.px - (rect.left + rect.width / 2);
+                    const diffY = mouse.py - (rect.top + rect.height / 2);
+                    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+                    let targetRx = 0, targetRy = 0, speedMult = 1;
+                    if (distance < 400 && distance > 0.001) {
+                        const force = (400 - distance) / 400;
+                        targetRx = (diffX / distance) * force * -80;
+                        targetRy = (diffY / distance) * force * -80;
+                        speedMult = 1 + force * 5;
+                    }
+
+                    let rx = parseFloat(berry.dataset.rx) || 0;
+                    let ry = parseFloat(berry.dataset.ry) || 0;
+                    let angle = parseFloat(berry.dataset.angle) || 0;
+                    const baseX = parseFloat(berry.dataset.baseX) || 0;
+                    const baseY = parseFloat(berry.dataset.baseY) || 0;
+
+                    rx += (targetRx - rx) * 0.1;
+                    ry += (targetRy - ry) * 0.1;
+                    angle += 0.2 * speedMult * (reduceMotion ? 0.25 : 1);
+
+                    berry.dataset.rx = rx;
+                    berry.dataset.ry = ry;
+                    berry.dataset.angle = angle;
+
+                    const dur = berryDurations[i % 9];
+                    const phase = (time + i * 0.7) * (Math.PI * 2 / dur);
+                    const floatY = Math.sin(phase) * 15 * floatAmp;
+                    const floatAngle = Math.cos(phase) * 6 * floatAmp;
+
+                    berry.style.transform = `translate(${rx + baseX}px, ${ry + baseY + floatY}px) rotate(${angle + floatAngle}deg) scale(${pop[i].v})`;
+                });
+            }
+
+            // Liście — zawsze unoszą się
+            leaves.forEach((leaf, i) => {
+                const dur = 10 + i * 2;
+                const phase = (time + i * 1.2) * (Math.PI * 2 / dur);
+                const floatY = Math.sin(phase) * 20 * floatAmp;
+                const floatX = Math.cos(phase * 0.5) * 15 * floatAmp;
+                const floatAngle = Math.sin(phase * 0.3) * 15 * floatAmp;
+                leaf.style.transform = `translate(${floatX}px, ${floatY}px) rotate(${floatAngle}deg)`;
+            });
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // =========================================================
+        // BĄBELKI
+        // =========================================================
+        const bubblesContainer = document.getElementById('bubbles-container');
+
+        function createBubble(opts = {}) {
+            if (!bubblesContainer) return;
+            const bubble = document.createElement('img');
+            bubble.src = ASSETS.bubble;
+            bubble.alt = '';
+            bubble.className = 'bubble-img';
+            bubble.style.width = (opts.size || Math.random() * 20 + 10) + 'px';
+            bubble.style.height = 'auto';
+            bubble.style.left = (opts.left ?? Math.random() * 100) + '%';
+            bubble.style.bottom = (opts.bottom ?? -50) + 'px';
+            bubble.style.setProperty('--bubble-op', (Math.random() * 0.4 + 0.2).toFixed(2));
+
+            const duration = opts.duration || Math.random() * 6 + 4;
+            bubble.style.animation = `floatUpImg ${duration}s linear forwards`;
+
+            bubblesContainer.appendChild(bubble);
+            setTimeout(() => bubble.remove(), duration * 1000);
+        }
+
+        // Chmurka bąbelków spod puszki przy zmianie smaku
+        function burst(count) {
+            if (reduceMotion) return;
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => createBubble({
+                    left: 38 + Math.random() * 24,
+                    bottom: Math.random() * window.innerHeight * 0.25,
+                    size: Math.random() * 18 + 8,
+                    duration: Math.random() * 2 + 2.2
+                }), i * 22);
+            }
+        }
+
+        let bubbleTimer = null;
+        function startBubbles() {
+            if (bubbleTimer) return;
+            bubbleTimer = setInterval(createBubble, reduceMotion ? 1400 : 400);
+        }
+        function stopBubbles() {
+            clearInterval(bubbleTimer);
+            bubbleTimer = null;
+        }
+        document.addEventListener('visibilitychange', () => document.hidden ? stopBubbles() : startBubbles());
+        startBubbles();
+
+        // =========================================================
+        // MENU, KOSZYK, NAWIGACJA
+        // =========================================================
+        const menuBtn = document.querySelector('.menu-btn');
+        menuBtn.addEventListener('click', () => {
+            const open = body.classList.toggle('menu-open');
+            menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(l => {
+                    l.classList.toggle('active', l === link);
+                    if (l === link) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current');
+                });
+                body.classList.remove('menu-open');
+                menuBtn.setAttribute('aria-expanded', 'false');
+            });
+        });
+        document.querySelectorAll('.logo, .ghost-link').forEach(a => a.addEventListener('click', e => e.preventDefault()));
+
+        let cartCount = 0;
+        const cartCountEl = document.querySelector('.cart-count');
+        const cartBtn = document.querySelector('.cart-btn');
+        const toast = document.querySelector('.toast');
+        let toastTween = null;
+
+        document.querySelector('.primary-btn').addEventListener('click', () => {
+            cartCount++;
+            cartCountEl.textContent = cartCount;
+            cartBtn.setAttribute('aria-label', `Koszyk — produkty: ${cartCount}`);
+            burst(14);
+            if (!hasGsap) { cartCountEl.style.transform = 'scale(1)'; return; }
+
+            gsap.fromTo(cartCountEl, { scale: cartCount === 1 ? 0 : 1.6 }, { scale: 1, duration: 0.6, ease: 'back.out(3)' });
+            gsap.fromTo(cartBtn, { rotation: -14 }, { rotation: 0, duration: 0.8, ease: 'elastic.out(1, 0.35)' });
+
+            if (toastTween) toastTween.kill();
+            toastTween = gsap.timeline()
+                .to(toast, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out' })
+                .to(toast, { opacity: 0, y: -12, duration: 0.4, ease: 'power2.in' }, '+=1.8');
+        });
+
+        // =========================================================
+        // EKRAN ŁADOWANIA + ANIMACJA WEJŚCIA
+        // =========================================================
+        const loader = document.querySelector('.loader');
+
+        if (!hasGsap) {
+            pop.forEach(p => { p.v = 1; });
+            return;
+        }
+
+        gsap.set(toast, { xPercent: -50, x: 0, y: -20 });
+
+        const liquid = loader.querySelector('.liquid');
+        const pctEl = loader.querySelector('.loader-pct');
+        const fizz = loader.querySelectorAll('.fizz');
+        const progress = { target: 0, shown: 0 };
+        let modelReady = false;
+        let introStarted = false;
+
+        gsap.to(fizz, { attr: { cy: '-=40' }, opacity: 0, duration: 1.4, repeat: -1, stagger: 0.35, ease: 'none' });
+
+        modelViewer.addEventListener('progress', e => {
+            progress.target = Math.max(progress.target, e.detail.totalProgress || 0);
+        });
+        modelViewer.addEventListener('load', () => { modelReady = true; progress.target = 1; });
+        modelViewer.addEventListener('error', () => { modelReady = true; progress.target = 1; });
+
+        // Zabezpieczenie — strona nie może utknąć na ekranie ładowania
+        const failSafe = setTimeout(() => { modelReady = true; progress.target = 1; }, 9000);
+        const minShow = new Promise(r => setTimeout(r, 900));
+        const fontsReady = document.fonts ? document.fonts.ready.catch(() => {}) : Promise.resolve();
+
+        gsap.ticker.add(function loaderTick() {
+            progress.shown += (progress.target - progress.shown) * 0.08;
+            if (progress.target === 1 && progress.shown > 0.995) progress.shown = 1;
+            const p = progress.shown;
+            pctEl.textContent = Math.round(p * 100) + '%';
+            liquid.setAttribute('y', 112 - p * 104);
+
+            if (p === 1 && modelReady && !introStarted) {
+                introStarted = true;
+                gsap.ticker.remove(loaderTick);
+                clearTimeout(failSafe);
+                Promise.all([minShow, fontsReady]).then(playIntro);
+            }
+        });
+
+        function playIntro() {
+            const chars = flavorWord.querySelectorAll('.ch');
+            const titleLines = document.querySelectorAll('.main-title .line-in');
+            const sideLines = document.querySelectorAll('.side-title .line-in');
+            const leftItems = document.querySelectorAll('.hero-left [data-intro]');
+            const headerItems = document.querySelectorAll('.header [data-intro]');
+            const canState = { spin: -200 };
+
+            gsap.set([titleLines, sideLines], { yPercent: 115 });
+            gsap.set(chars, { yPercent: 70, opacity: 0 });
+            gsap.set(modelViewer, { '--can-scale': 0.55, '--can-rot': '-8deg' });
+
+            const tl = gsap.timeline({
+                defaults: { ease: 'expo.out' },
+                onComplete: () => {
+                    document.querySelectorAll('.reveal').forEach(el => el.classList.remove('reveal'));
+                }
+            });
+
+            tl.to(loader, { yPercent: -100, duration: 1.1, ease: 'power4.inOut' })
+              .set(loader, { display: 'none' })
+
+              .to(headerItems, { opacity: 1, duration: 0.01 }, 0.55)
+              .from(headerItems, { y: -30, duration: 1, stagger: 0.08 }, 0.55)
+
+              .to(heroCenter, { opacity: 1, duration: 1.2, ease: 'power2.out' }, 0.6)
+              .to(modelViewer, { '--can-scale': 1, '--can-rot': '25deg', duration: 1.8, ease: 'expo.out' }, 0.6)
+              .to(canState, {
+                  spin: 0, duration: 2, ease: 'expo.out',
+                  onUpdate: () => { switchSpin = canState.spin; },
+                  onComplete: () => { switchSpin = 0; }
+              }, 0.6)
+
+              .to(titleLines, { yPercent: 0, duration: 1.3, stagger: 0.12 }, 0.75)
+              .to(sideLines, { yPercent: 0, duration: 1.3, stagger: 0.12 }, 0.9)
+              .to(chars, { yPercent: 0, opacity: 1, duration: 1.4, stagger: 0.05 }, 0.85)
+
+              .fromTo(leftItems, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 1, stagger: 0.1 }, 1.05)
+              .fromTo('.product-carousel', { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 1.2 }, 1.0)
+              .fromTo('.card', { y: 30 }, { y: 0, duration: 1.2, stagger: 0.1, clearProps: 'transform' }, 1.0)
+
+              .to(pop, { v: 1, duration: 1.1, ease: 'back.out(1.8)', stagger: { each: 0.07, from: 'random' } }, 1.0)
+              .fromTo('.ticker', { opacity: 0 }, { opacity: 1, duration: 1 }, 1.4)
+              .fromTo(dragHint, { opacity: 0, y: 10 }, { opacity: () => (drag.used ? 0 : 1), y: 0, duration: 0.8 }, 2.2);
+        }
+    })();
+    </script>
+</body>
+</html>

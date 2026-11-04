@@ -16,6 +16,8 @@ bez kroku budowania — wystarczy otworzyć go w przeglądarce albo wystawić na
   puszka robi obrót 720° z rozmyciem i zmienia etykietę, owoce zapadają się do środka i wybuchają
   w nowe miejsca, a wielki napis w tle („WIŚNIA” / „JAGODA”) wymienia litery.
 - „Kup teraz” dodaje do koszyka (licznik + powiadomienie + chmurka bąbelków).
+- Wysuwane panele: Skład i wartości odżywcze, Smaki (z wyborem smaku), Eko (system kaucyjny),
+  Opinie, formularz kontaktowy (demo) i koszyk z ilościami, darmową dostawą od 50 zł i sumą.
 - Widok mobilny z menu rozwijanym, obsługa dotyku i `prefers-reduced-motion`.
 
 **Technologie:** HTML, CSS, JavaScript, [GSAP 3](https://gsap.com/),

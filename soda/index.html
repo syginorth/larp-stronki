@@ -43,6 +43,7 @@
             --accent: #fbcfe8;
             --on-accent: #011d17;
             --glow: rgba(16, 185, 129, 0.12);
+            --panel-bg: rgba(2, 30, 26, 0.82);
 
             --header-h: 6rem;
             --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -55,6 +56,7 @@
             --accent: #d9d0ff;
             --on-accent: #0a1238;
             --glow: rgba(59, 130, 246, 0.14);
+            --panel-bg: rgba(2, 17, 34, 0.84);
         }
 
         * {
@@ -222,6 +224,9 @@
             z-index: 200;
         }
 
+        /* Przy otwartym panelu menu zostaje klikalne (nad przyciemnieniem, pod panelem) */
+        .drawer-open .header { z-index: 370; }
+
         .logo {
             display: flex;
             align-items: center;
@@ -264,6 +269,8 @@
             border-radius: 100px;
             transition: background 0.3s ease, color 0.3s ease;
         }
+
+        .nav-mobile-only { display: none; }
 
         .nav-item:hover,
         .nav-item.active {
@@ -982,6 +989,711 @@
         }
 
         /* =========================================================
+           WYSUWANE PANELE
+           ========================================================= */
+        .scrim {
+            position: fixed;
+            inset: 0;
+            z-index: 350;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            width: min(470px, calc(100vw - 2rem));
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 28px;
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .no-gsap .scrim,
+        .no-gsap .drawer { transition: opacity 0.3s ease, visibility 0s linear 0.3s; }
+        .no-gsap .scrim.is-open,
+        .no-gsap .drawer.is-open { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+
+        .drawer-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.6rem 1.6rem 1.1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .drawer-kicker {
+            display: block;
+            font-family: var(--font-ui);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.45rem;
+        }
+
+        .drawer-title {
+            font-family: var(--font-heading);
+            font-weight: 400;
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+
+        .drawer-close {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease, transform 0.4s var(--ease-out);
+        }
+
+        .drawer-close:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: rotate(90deg);
+        }
+
+        .drawer-panels {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+        }
+
+        .panel {
+            display: none;
+            flex: 1;
+            min-height: 0;
+            flex-direction: column;
+        }
+
+        .panel.active { display: flex; }
+
+        .panel-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 1.4rem 1.6rem 1.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            touch-action: pan-y;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .panel-foot {
+            padding: 1.2rem 1.6rem 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .lead {
+            color: var(--muted-color);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .fineprint {
+            font-size: 0.72rem;
+            color: var(--faint-color);
+            line-height: 1.5;
+        }
+
+        .block-title {
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--faint-color);
+            margin-bottom: 0.7rem;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .chip {
+            font-family: var(--font-ui);
+            font-size: 0.76rem;
+            font-weight: 500;
+            padding: 0.42rem 0.85rem;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--muted-color);
+        }
+
+        .segmented {
+            display: flex;
+            padding: 0.3rem;
+            gap: 0.3rem;
+            border-radius: 100px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--glass-border);
+        }
+
+        .segmented button {
+            flex: 1;
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 0.55rem 0.8rem;
+            border-radius: 100px;
+            font-family: var(--font-ui);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--muted-color);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .segmented button[aria-pressed="true"] {
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .ingredients {
+            font-size: 0.88rem;
+            line-height: 1.65;
+            color: var(--muted-color);
+        }
+
+        .ingredients b { color: white; font-weight: 600; }
+
+        .nutri {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .nutri th,
+        .nutri td {
+            padding: 0.62rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: right;
+            font-weight: 400;
+        }
+
+        .nutri th:not(:first-child),
+        .nutri td:not(:first-child) {
+            white-space: nowrap;
+            padding-left: 0.9rem;
+        }
+
+        .nutri th:first-child,
+        .nutri td:first-child { text-align: left; }
+
+        .nutri thead th {
+            font-family: var(--font-ui);
+            font-size: 0.68rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--faint-color);
+        }
+
+        .nutri .sub td:first-child { padding-left: 1rem; color: var(--muted-color); }
+        .nutri td:not(:first-child) { color: white; }
+
+        /* Smaki */
+        .flavor-tile {
+            display: grid;
+            grid-template-columns: 78px 1fr;
+            gap: 1.1rem;
+            padding: 1.1rem;
+            border-radius: 22px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .flavor-tile.current { border-color: var(--accent); }
+
+        .flavor-tile img {
+            width: 78px;
+            height: auto;
+            align-self: center;
+            filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.45));
+            transform: rotate(-8deg);
+        }
+
+        .flavor-tile h3 {
+            font-family: var(--font-heading);
+            font-weight: 400;
+            font-size: 1.55rem;
+            line-height: 1.05;
+            margin-bottom: 0.35rem;
+        }
+
+        .flavor-tile p {
+            font-size: 0.84rem;
+            line-height: 1.55;
+            color: var(--muted-color);
+        }
+
+        .badge {
+            position: absolute;
+            top: 0.9rem;
+            right: 0.9rem;
+            font-family: var(--font-ui);
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.6rem;
+            border-radius: 100px;
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .profile {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.45rem 0.8rem;
+            align-items: center;
+            margin: 0.9rem 0 1rem;
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            color: var(--faint-color);
+        }
+
+        .bar {
+            height: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .bar i {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--tile-accent);
+            transform-origin: left;
+        }
+
+        .tile-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Przyciski w panelach */
+        .btn {
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: white;
+            cursor: pointer;
+            padding: 0.6rem 1rem;
+            border-radius: 100px;
+            font-family: var(--font-ui);
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.3); }
+
+        .btn-accent {
+            background: var(--accent);
+            border-color: transparent;
+            color: var(--on-accent);
+        }
+
+        .btn-accent:hover { background: var(--accent); filter: brightness(1.06); transform: translateY(-1px); }
+
+        .btn-full {
+            width: 100%;
+            padding: 0.95rem 1.2rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+
+        /* Eko */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.7rem;
+        }
+
+        .stat {
+            padding: 1rem;
+            border-radius: 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat b {
+            display: block;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.9rem;
+            line-height: 1.1;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat span {
+            font-size: 0.78rem;
+            line-height: 1.4;
+            color: var(--muted-color);
+        }
+
+        .steps {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            counter-reset: step;
+        }
+
+        .steps li {
+            display: grid;
+            grid-template-columns: 34px 1fr;
+            gap: 0.9rem;
+            align-items: start;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            color: var(--muted-color);
+        }
+
+        .steps li::before {
+            counter-increment: step;
+            content: counter(step);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-ui);
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .steps b { color: white; font-weight: 600; display: block; }
+
+        /* Opinie */
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .rating-score {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .stars {
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            font-size: 0.95rem;
+        }
+
+        .stars .off { color: rgba(255, 255, 255, 0.2); }
+
+        .review {
+            padding: 1.1rem 1.2rem;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+
+        .review p {
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        .review footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--faint-color);
+        }
+
+        /* Formularz */
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .field label {
+            font-family: var(--font-ui);
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--muted-color);
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            font: inherit;
+            font-size: 0.92rem;
+            color: white;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 0.8rem 0.95rem;
+            outline: none;
+            transition: border-color 0.3s ease, background 0.3s ease;
+            width: 100%;
+        }
+
+        .field textarea { min-height: 120px; resize: vertical; }
+
+        .field select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+
+        .field select option { color: #111; }
+
+        .field input::placeholder,
+        .field textarea::placeholder { color: rgba(255, 255, 255, 0.35); }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: var(--accent);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .field input:user-invalid,
+        .field textarea:user-invalid { border-color: #fca5a5; }
+
+        .success {
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.4rem;
+            border-radius: 22px;
+            background: var(--glass-bg);
+            border: 1px solid var(--accent);
+        }
+
+        .success.show { display: flex; }
+
+        .success-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--on-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success h3 {
+            font-family: var(--font-heading);
+            font-weight: 400;
+            font-size: 1.7rem;
+            line-height: 1.1;
+        }
+
+        /* Koszyk */
+        .cart-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 46px 1fr auto;
+            gap: 0.9rem;
+            align-items: center;
+            padding: 0.8rem 0.9rem;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+        }
+
+        .cart-item img {
+            width: 40px;
+            height: auto;
+            justify-self: center;
+            filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
+        }
+
+        .cart-item-name { font-weight: 600; font-size: 0.9rem; }
+        .cart-item-price { font-size: 0.78rem; color: var(--muted-color); font-variant-numeric: tabular-nums; }
+
+        .cart-item-remove {
+            border: none;
+            background: none;
+            color: var(--faint-color);
+            cursor: pointer;
+            font-size: 0.72rem;
+            padding: 0.2rem 0;
+            margin-top: 0.2rem;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .cart-item-remove:hover { color: white; }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.25rem;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.22);
+        }
+
+        .stepper button {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            transition: background 0.2s ease;
+        }
+
+        .stepper button:hover { background: rgba(255, 255, 255, 0.12); }
+
+        .stepper output {
+            min-width: 1.6em;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+
+        .cart-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.9rem;
+            padding: 2.5rem 1rem;
+        }
+
+        .cart-empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted-color);
+        }
+
+        .cart-empty h3 {
+            font-family: var(--font-heading);
+            font-weight: 400;
+            font-size: 1.6rem;
+        }
+
+        .ship {
+            font-size: 0.78rem;
+            color: var(--muted-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .ship .bar { height: 6px; }
+        .ship .bar i { background: var(--accent); transition: width 0.6s var(--ease-out); }
+
+        .sum-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--muted-color);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .sum-row.total {
+            font-size: 1.05rem;
+            color: white;
+            font-weight: 700;
+        }
+
+        .checkout-note {
+            display: none;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            color: var(--muted-color);
+            text-align: center;
+        }
+
+        .checkout-note.show { display: block; }
+
+        @media (max-width: 600px) {
+            .drawer {
+                top: auto;
+                left: 0.5rem;
+                right: 0.5rem;
+                bottom: 0.5rem;
+                width: auto;
+                height: min(86dvh, 760px);
+                border-radius: 26px;
+            }
+            .drawer-head { padding: 1.3rem 1.3rem 0.9rem; }
+            .drawer-title { font-size: 2.1rem; }
+            .panel-scroll { padding: 1.2rem 1.3rem 1.5rem; }
+            .panel-foot { padding: 1rem 1.3rem 1.2rem; }
+            .stat b { font-size: 1.6rem; }
+            .nutri { font-size: 0.8rem; }
+            .nutri th:not(:first-child),
+            .nutri td:not(:first-child) { padding-left: 0.6rem; }
+        }
+
+        /* =========================================================
            RESPONSYWNOŚĆ
            ========================================================= */
         @media (max-width: 1200px) {
@@ -1029,6 +1741,7 @@
                 transition: opacity 0.3s ease, transform 0.35s var(--ease-out), visibility 0s;
             }
             .nav-item { padding: 0.75rem 1rem; font-size: 0.95rem; }
+            .nav-mobile-only { display: block; }
             .menu-btn { display: flex; }
             .contact-btn { display: none; }
 
@@ -1126,20 +1839,21 @@
         </a>
         <nav class="nav glass" id="main-nav" aria-label="Główna nawigacja" data-intro>
             <a href="#" class="nav-item active" aria-current="page">Start</a>
-            <a href="#" class="nav-item">Skład</a>
-            <a href="#" class="nav-item">Smaki</a>
-            <a href="#" class="nav-item">Eko</a>
-            <a href="#" class="nav-item">Opinie</a>
+            <a href="#" class="nav-item" data-open="sklad">Skład</a>
+            <a href="#" class="nav-item" data-open="smaki">Smaki</a>
+            <a href="#" class="nav-item" data-open="eko">Eko</a>
+            <a href="#" class="nav-item" data-open="opinie">Opinie</a>
+            <a href="#" class="nav-item nav-mobile-only" data-open="kontakt">Kontakt</a>
         </nav>
         <div class="header-actions" data-intro>
-            <button class="cart-btn" aria-label="Koszyk">
+            <button class="cart-btn" aria-label="Koszyk" data-open="koszyk">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M5 8h14l-1.2 11.1A2 2 0 0 1 15.8 21H8.2a2 2 0 0 1-2-1.9L5 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
                     <path d="M9 10V6.5a3 3 0 0 1 6 0V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
                 <span class="cart-count">0</span>
             </button>
-            <button class="contact-btn">Napisz do nas</button>
+            <button class="contact-btn" data-open="kontakt">Napisz do nas</button>
             <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="main-nav">
                 <span></span><span></span>
             </button>
@@ -1175,7 +1889,7 @@
                         Kup teraz
                         <span class="plus-icon" aria-hidden="true">+</span>
                     </button>
-                    <a href="#" class="ghost-link">Skład i wartości <span aria-hidden="true">→</span></a>
+                    <a href="#" class="ghost-link" data-open="sklad">Skład i wartości <span aria-hidden="true">→</span></a>
                 </div>
                 <div class="award-badge" data-intro>
                     <div class="award-icon" aria-hidden="true">
@@ -1271,6 +1985,184 @@
         <span>Dodano do koszyka — <b class="toast-flavor">Wiśnia &amp; mięta</b></span>
     </div>
 
+    <!-- Wysuwane panele -->
+    <div class="scrim" aria-hidden="true"></div>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" inert>
+        <div class="drawer-head">
+            <div class="drawer-titles">
+                <span class="drawer-kicker"></span>
+                <h2 class="drawer-title" id="drawer-title"></h2>
+            </div>
+            <button class="drawer-close" aria-label="Zamknij panel">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            </button>
+        </div>
+
+        <div class="drawer-panels">
+
+            <!-- SKŁAD -->
+            <section class="panel" data-panel="sklad" data-title="Skład i wartości" data-kicker="Bez tajemnic">
+                <div class="panel-scroll">
+                    <div class="segmented" role="group" aria-label="Pokaż skład smaku" data-anim>
+                        <button type="button" data-sklad="0" aria-pressed="true">Wiśnia &amp; mięta</button>
+                        <button type="button" data-sklad="1" aria-pressed="false">Jagoda &amp; limonka</button>
+                    </div>
+                    <div data-anim>
+                        <div class="block-title">Składniki</div>
+                        <p class="ingredients"></p>
+                    </div>
+                    <div class="chips" data-anim>
+                        <span class="chip">0 g cukru</span>
+                        <span class="chip">Wegańskie</span>
+                        <span class="chip">Bez konserwantów</span>
+                        <span class="chip">Bez kofeiny</span>
+                        <span class="chip">330 ml</span>
+                    </div>
+                    <div data-anim>
+                        <div class="block-title">Wartości odżywcze</div>
+                        <table class="nutri">
+                            <thead>
+                                <tr><th scope="col"></th><th scope="col">100 ml</th><th scope="col">330 ml</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Wartość energetyczna</td><td>0 kJ / 0 kcal</td><td>1 kJ / 0 kcal</td></tr>
+                                <tr><td>Tłuszcz</td><td>0 g</td><td>0 g</td></tr>
+                                <tr class="sub"><td>w tym kwasy tłuszczowe nasycone</td><td>0 g</td><td>0 g</td></tr>
+                                <tr><td>Węglowodany</td><td>0 g</td><td>0 g</td></tr>
+                                <tr class="sub"><td>w tym cukry</td><td>0 g</td><td>0 g</td></tr>
+                                <tr><td>Białko</td><td>0 g</td><td>0 g</td></tr>
+                                <tr><td>Sól</td><td>0,02 g</td><td>0,07 g</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fineprint" data-anim>Syk to projekt koncepcyjny — skład i wartości są przykładowe.</p>
+                </div>
+            </section>
+
+            <!-- SMAKI -->
+            <section class="panel" data-panel="smaki" data-title="Nasze smaki" data-kicker="Polskie lato w puszce">
+                <div class="panel-scroll">
+                    <p class="lead" data-anim>Dwa smaki, zero cukru. Wybierz swój — strona od razu się do niego dopasuje.</p>
+                    <div class="flavor-tiles" style="display:flex;flex-direction:column;gap:0.8rem;"></div>
+                </div>
+            </section>
+
+            <!-- EKO -->
+            <section class="panel" data-panel="eko" data-title="Puszka bez końca" data-kicker="Eko">
+                <div class="panel-scroll">
+                    <p class="lead" data-anim>Aluminium można przetapiać w nieskończoność, bez utraty jakości. Dlatego Syk jest dostępny wyłącznie w puszkach.</p>
+                    <div class="stats" data-anim>
+                        <div class="stat"><b>∞</b><span>razy można przetworzyć tę samą puszkę</span></div>
+                        <div class="stat"><b>60 dni</b><span>tyle może trwać droga puszki z recyklingu z powrotem na półkę</span></div>
+                        <div class="stat"><b>0,50 zł</b><span>kaucji za każdą puszkę w systemie kaucyjnym</span></div>
+                        <div class="stat"><b>100%</b><span>energii z OZE w naszej rozlewni</span></div>
+                    </div>
+                    <div data-anim>
+                        <div class="block-title">Jak oddać puszkę</div>
+                        <ol class="steps">
+                            <li><span><b>Wypij do dna</b>Resztki napoju mogą zablokować automat.</span></li>
+                            <li><span><b>Nie zgniataj</b>Automat musi odczytać kod kreskowy i znak kaucji.</span></li>
+                            <li><span><b>Oddaj w sklepie</b>Wrzuć puszkę do automatu lub oddaj przy kasie i odbierz 0,50 zł.</span></li>
+                        </ol>
+                    </div>
+                    <p class="fineprint" data-anim>Dane marki są przykładowe — projekt koncepcyjny.</p>
+                </div>
+            </section>
+
+            <!-- OPINIE -->
+            <section class="panel" data-panel="opinie" data-title="Co mówią inni" data-kicker="Opinie">
+                <div class="panel-scroll">
+                    <div class="rating" data-anim>
+                        <span class="rating-score">4,8</span>
+                        <div>
+                            <div class="stars" aria-label="4,8 na 5 gwiazdek">★★★★★</div>
+                            <div class="fineprint">średnia z 1 248 ocen</div>
+                        </div>
+                    </div>
+                    <article class="review" data-anim>
+                        <div class="stars" aria-label="5 na 5">★★★★★</div>
+                        <p>Smakuje jak wiśnie z ogródka babci, tylko bez cukru. Mięta na końcu robi całą robotę.</p>
+                        <footer><span>Ola, Kraków</span><span>Wiśnia &amp; mięta</span></footer>
+                    </article>
+                    <article class="review" data-anim>
+                        <div class="stars" aria-label="5 na 5">★★★★★</div>
+                        <p>Jagoda z limonką to mój nowy napój po treningu. Lekki, orzeźwiający i nie zostawia słodkiego posmaku.</p>
+                        <footer><span>Kuba, Gdańsk</span><span>Jagoda &amp; limonka</span></footer>
+                    </article>
+                    <article class="review" data-anim>
+                        <div class="stars" aria-label="4 na 5">★★★★<span class="off">★</span></div>
+                        <p>Bardzo dobre bąbelki, mocno gazowane — tak jak lubię. Chętnie zobaczyłbym większą puszkę.</p>
+                        <footer><span>Marek, Poznań</span><span>Wiśnia &amp; mięta</span></footer>
+                    </article>
+                    <article class="review" data-anim>
+                        <div class="stars" aria-label="5 na 5">★★★★★</div>
+                        <p>Piękna puszka, świetny smak i zero wyrzutów sumienia. Kupuję od razu po kilka sztuk.</p>
+                        <footer><span>Natalia, Wrocław</span><span>Jagoda &amp; limonka</span></footer>
+                    </article>
+                    <p class="fineprint" data-anim>Opinie są przykładowe — Syk to projekt koncepcyjny.</p>
+                </div>
+            </section>
+
+            <!-- KONTAKT -->
+            <section class="panel" data-panel="kontakt" data-title="Napisz do nas" data-kicker="Kontakt">
+                <div class="panel-scroll">
+                    <p class="lead" data-anim>Współpraca, event, a może pomysł na nowy smak? Napisz — odpowiadamy w ciągu 24 godzin.</p>
+                    <form class="form" novalidate data-anim>
+                        <div class="field">
+                            <label for="f-name">Imię</label>
+                            <input id="f-name" name="name" type="text" autocomplete="given-name" placeholder="Jak masz na imię?" required>
+                        </div>
+                        <div class="field">
+                            <label for="f-email">E-mail</label>
+                            <input id="f-email" name="email" type="email" autocomplete="email" placeholder="adres@przyklad.pl" required>
+                        </div>
+                        <div class="field">
+                            <label for="f-topic">Temat</label>
+                            <select id="f-topic" name="topic">
+                                <option>Pytanie o produkt</option>
+                                <option>Współpraca</option>
+                                <option>Event lub degustacja</option>
+                                <option>Inne</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="f-msg">Wiadomość</label>
+                            <textarea id="f-msg" name="message" placeholder="Twoja wiadomość…" required></textarea>
+                        </div>
+                        <button class="btn btn-accent btn-full" type="submit">Wyślij wiadomość</button>
+                        <p class="fineprint">Wersja demonstracyjna — formularz niczego nie wysyła.</p>
+                    </form>
+                    <div class="success" role="status">
+                        <span class="success-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        </span>
+                        <h3 class="success-title">Dzięki!</h3>
+                        <p class="lead">Wiadomość dotarła (w wersji demo — na niby). Odezwiemy się najszybciej, jak to możliwe.</p>
+                        <button class="btn" type="button" data-act="new-message">Napisz kolejną</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- KOSZYK -->
+            <section class="panel" data-panel="koszyk" data-title="Twój koszyk" data-kicker="Zakupy">
+                <div class="panel-scroll">
+                    <div class="cart-list"></div>
+                </div>
+                <div class="panel-foot cart-foot">
+                    <div class="ship">
+                        <span class="ship-text"></span>
+                        <div class="bar"><i style="width: 0%"></i></div>
+                    </div>
+                    <div class="sum-row"><span>Produkty</span><span class="sum-items"></span></div>
+                    <div class="sum-row"><span>Dostawa</span><span class="sum-ship"></span></div>
+                    <div class="sum-row total"><span>Razem</span><span class="sum-total"></span></div>
+                    <button class="btn btn-accent btn-full" type="button" data-act="checkout">Przejdź do kasy</button>
+                    <p class="checkout-note" role="status">To projekt koncepcyjny — płatności są wyłączone. Dziękujemy za odwiedziny!</p>
+                </div>
+            </section>
+        </div>
+    </aside>
+
     <svg style="position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;" aria-hidden="true">
         <filter id="frosted">
             <feTurbulence type="fractalNoise" baseFrequency="0.0125" numOctaves="3" result="noise" />
@@ -1306,9 +2198,15 @@
                 berry: ASSETS.cherry,
                 vars: {
                     '--bg-inner': '#0b8a78', '--bg-mid': '#044e3b', '--bg-outer': '#011411',
-                    '--accent': '#fbcfe8', '--on-accent': '#011d17', '--glow': 'rgba(16, 185, 129, 0.12)'
+                    '--accent': '#fbcfe8', '--on-accent': '#011d17', '--glow': 'rgba(16, 185, 129, 0.12)',
+                    '--panel-bg': 'rgba(2, 30, 26, 0.82)'
                 },
-                themeColor: '#044e3b'
+                themeColor: '#044e3b',
+                img: `${ASSET_BASE_URL}/Green%20Soda.png`,
+                imgFilter: '',
+                desc: 'Soczysta wiśnia z polskich sadów i chłodny powiew mięty. Klasyka, od której wszystko się zaczęło.',
+                profile: [['Słodycz', 45], ['Kwasowość', 60], ['Orzeźwienie', 85]],
+                ingredients: 'Woda gazowana, kwas: kwas cytrynowy, <b>naturalny aromat wiśniowy</b>, <b>ekstrakt z liści mięty</b>, regulator kwasowości: cytryniany sodu, substancje słodzące: erytrytol, glikozydy stewiolowe ze stewii, koncentrat z marchwi purpurowej (barwnik).'
             },
             {
                 id: 'jagoda',
@@ -1318,9 +2216,15 @@
                 berry: ASSETS.blueberry,
                 vars: {
                     '--bg-inner': '#0b4f8a', '--bg-mid': '#04294e', '--bg-outer': '#010c14',
-                    '--accent': '#d9d0ff', '--on-accent': '#0a1238', '--glow': 'rgba(59, 130, 246, 0.14)'
+                    '--accent': '#d9d0ff', '--on-accent': '#0a1238', '--glow': 'rgba(59, 130, 246, 0.14)',
+                    '--panel-bg': 'rgba(2, 17, 34, 0.84)'
                 },
-                themeColor: '#04294e'
+                themeColor: '#04294e',
+                img: `${ASSET_BASE_URL}/Blue%20Soda.png`,
+                imgFilter: 'filter: brightness(0.7) drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));',
+                desc: 'Leśna jagoda przełamana kwaskiem limonki. Na upalne popołudnia i długie, letnie wieczory.',
+                profile: [['Słodycz', 55], ['Kwasowość', 75], ['Orzeźwienie', 90]],
+                ingredients: 'Woda gazowana, kwas: kwas cytrynowy, <b>naturalny aromat jagodowy</b>, <b>sok z limonki z koncentratu (1%)</b>, regulator kwasowości: cytryniany sodu, substancje słodzące: erytrytol, glikozydy stewiolowe ze stewii, ekstrakt z czarnej marchwi (barwnik).'
             }
         ];
 
@@ -1462,7 +2366,7 @@
         cards.forEach((card, i) => card.addEventListener('click', () => selectFlavor(i)));
         arrows.forEach(btn => btn.addEventListener('click', () => selectFlavor(currentFlavor + Number(btn.dataset.dir))));
         window.addEventListener('keydown', e => {
-            if (e.target.closest && e.target.closest('input, textarea')) return;
+            if (openPanel || (e.target.closest && e.target.closest('input, textarea, select'))) return;
             if (e.key === 'ArrowRight') selectFlavor(currentFlavor + 1);
             if (e.key === 'ArrowLeft') selectFlavor(currentFlavor - 1);
         });
@@ -1818,48 +2722,343 @@
         startBubbles();
 
         // =========================================================
-        // MENU, KOSZYK, NAWIGACJA
+        // MENU MOBILNE
         // =========================================================
         const menuBtn = document.querySelector('.menu-btn');
+        const navItems = Array.from(document.querySelectorAll('.nav-item'));
+
+        function closeMenu() {
+            body.classList.remove('menu-open');
+            menuBtn.setAttribute('aria-expanded', 'false');
+        }
+
         menuBtn.addEventListener('click', () => {
             const open = body.classList.toggle('menu-open');
             menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
 
-        document.querySelectorAll('.nav-item').forEach(link => {
-            link.addEventListener('click', e => {
-                e.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(l => {
-                    l.classList.toggle('active', l === link);
-                    if (l === link) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current');
-                });
-                body.classList.remove('menu-open');
-                menuBtn.setAttribute('aria-expanded', 'false');
+        function setActiveNav(name) {
+            navItems.forEach(l => {
+                const on = name ? l.dataset.open === name : !l.dataset.open;
+                l.classList.toggle('active', on);
+                if (on) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current');
             });
-        });
-        document.querySelectorAll('.logo, .ghost-link').forEach(a => a.addEventListener('click', e => e.preventDefault()));
+        }
 
-        let cartCount = 0;
+        // =========================================================
+        // KOSZYK — stan
+        // =========================================================
+        const PRICE = 4.99;
+        const FREE_SHIPPING = 50;
+        const SHIPPING = 12.99;
+        const money = new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN' });
+        const cart = { wisnia: 0, jagoda: 0 };
         const cartCountEl = document.querySelector('.cart-count');
         const cartBtn = document.querySelector('.cart-btn');
         const toast = document.querySelector('.toast');
         let toastTween = null;
+        let shownCount = 0;
 
-        document.querySelector('.primary-btn').addEventListener('click', () => {
-            cartCount++;
-            cartCountEl.textContent = cartCount;
-            cartBtn.setAttribute('aria-label', `Koszyk — produkty: ${cartCount}`);
+        const cartTotalCount = () => Object.values(cart).reduce((a, b) => a + b, 0);
+
+        function updateCartBadge() {
+            const count = cartTotalCount();
+            cartCountEl.textContent = count;
+            cartBtn.setAttribute('aria-label', count ? `Koszyk — produkty: ${count}` : 'Koszyk — pusty');
+            if (!hasGsap) {
+                cartCountEl.style.transform = count ? 'scale(1)' : 'scale(0)';
+            } else if (count === 0) {
+                gsap.to(cartCountEl, { scale: 0, duration: 0.3, ease: 'power2.in' });
+            } else if (count > shownCount) {
+                gsap.fromTo(cartCountEl, { scale: shownCount === 0 ? 0 : 1.6 }, { scale: 1, duration: 0.6, ease: 'back.out(3)' });
+                gsap.fromTo(cartBtn, { rotation: -14 }, { rotation: 0, duration: 0.8, ease: 'elastic.out(1, 0.35)' });
+            }
+            shownCount = count;
+            if (openPanel === 'koszyk') renderCart();
+        }
+
+        function addToCart(id, showToast = true) {
+            cart[id]++;
+            updateCartBadge();
             burst(14);
-            if (!hasGsap) { cartCountEl.style.transform = 'scale(1)'; return; }
-
-            gsap.fromTo(cartCountEl, { scale: cartCount === 1 ? 0 : 1.6 }, { scale: 1, duration: 0.6, ease: 'back.out(3)' });
-            gsap.fromTo(cartBtn, { rotation: -14 }, { rotation: 0, duration: 0.8, ease: 'elastic.out(1, 0.35)' });
-
+            if (!showToast || !hasGsap || openPanel === 'koszyk') return;
+            document.querySelector('.toast-flavor').textContent = FLAVORS.find(f => f.id === id).name;
             if (toastTween) toastTween.kill();
             toastTween = gsap.timeline()
                 .to(toast, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out' })
                 .to(toast, { opacity: 0, y: -12, duration: 0.4, ease: 'power2.in' }, '+=1.8');
+        }
+
+        document.querySelector('.primary-btn').addEventListener('click', () => addToCart(FLAVORS[currentFlavor].id));
+
+        // =========================================================
+        // PANELE — treść
+        // =========================================================
+        const drawer = document.querySelector('.drawer');
+        const scrim = document.querySelector('.scrim');
+        const drawerTitles = drawer.querySelector('.drawer-titles');
+        const drawerPanels = drawer.querySelector('.drawer-panels');
+        const panels = Array.from(drawer.querySelectorAll('.panel'));
+        const kickerEl = drawer.querySelector('.drawer-kicker');
+        const titleEl = drawer.querySelector('.drawer-title');
+        const isSheet = () => window.matchMedia('(max-width: 600px)').matches;
+        let openPanel = null;
+        let returnFocus = null;
+        let drawerTl = null;
+
+        // Skład
+        let skladFlavor = 0;
+        function renderSklad() {
+            const f = FLAVORS[skladFlavor];
+            drawer.querySelectorAll('[data-sklad]').forEach(b => {
+                b.setAttribute('aria-pressed', Number(b.dataset.sklad) === skladFlavor ? 'true' : 'false');
+            });
+            drawer.querySelector('.ingredients').innerHTML = f.ingredients;
+        }
+        drawer.querySelectorAll('[data-sklad]').forEach(b => b.addEventListener('click', () => {
+            skladFlavor = Number(b.dataset.sklad);
+            renderSklad();
+            if (hasGsap) gsap.fromTo('.ingredients', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' });
+        }));
+
+        // Smaki
+        function renderSmaki() {
+            drawer.querySelector('.flavor-tiles').innerHTML = FLAVORS.map((f, i) => `
+                <article class="flavor-tile ${i === currentFlavor ? 'current' : ''}" style="--tile-accent: ${f.vars['--accent']}" data-anim>
+                    ${i === currentFlavor ? '<span class="badge">Wybrany</span>' : ''}
+                    <img src="${f.img}" alt="" style="${f.imgFilter || ''}">
+                    <div>
+                        <h3>${f.name.replace('&', '&amp;')}</h3>
+                        <p>${f.desc}</p>
+                        <div class="profile">
+                            ${f.profile.map(([label, v]) => `<span>${label}</span><span class="bar"><i style="width:${v}%"></i></span>`).join('')}
+                        </div>
+                        <div class="tile-actions">
+                            ${i === currentFlavor ? '' : `<button class="btn btn-accent" type="button" data-act="pick" data-i="${i}">Wybierz ten smak</button>`}
+                            <button class="btn" type="button" data-act="add" data-id="${f.id}">Do koszyka · ${money.format(PRICE)}</button>
+                        </div>
+                    </div>
+                </article>`).join('');
+        }
+
+        // Koszyk
+        function renderCart() {
+            const list = drawer.querySelector('.cart-list');
+            const items = FLAVORS.filter(f => cart[f.id] > 0);
+            const count = cartTotalCount();
+            const subtotal = count * PRICE;
+            const shipping = count === 0 || subtotal >= FREE_SHIPPING ? 0 : SHIPPING;
+
+            if (!items.length) {
+                const f = FLAVORS[currentFlavor];
+                list.innerHTML = `
+                    <div class="cart-empty" data-anim>
+                        <span class="cart-empty-icon" aria-hidden="true">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 8h14l-1.2 11.1A2 2 0 0 1 15.8 21H8.2a2 2 0 0 1-2-1.9L5 8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        </span>
+                        <h3>Koszyk jest pusty</h3>
+                        <p class="lead">Na początek polecamy ${f.name.replace('&', '&amp;')}.</p>
+                        <button class="btn btn-accent" type="button" data-act="add" data-id="${f.id}">Dodaj do koszyka · ${money.format(PRICE)}</button>
+                    </div>`;
+            } else {
+                list.innerHTML = items.map(f => `
+                    <div class="cart-item" data-anim>
+                        <img src="${f.img}" alt="" style="${f.imgFilter || ''}">
+                        <div>
+                            <div class="cart-item-name">${f.name.replace('&', '&amp;')}</div>
+                            <div class="cart-item-price">${money.format(PRICE)} × ${cart[f.id]} = ${money.format(PRICE * cart[f.id])}</div>
+                            <button class="cart-item-remove" type="button" data-act="remove" data-id="${f.id}">Usuń</button>
+                        </div>
+                        <div class="stepper" role="group" aria-label="Ilość: ${f.name}">
+                            <button type="button" data-act="dec" data-id="${f.id}" aria-label="Mniej">−</button>
+                            <output aria-live="polite">${cart[f.id]}</output>
+                            <button type="button" data-act="inc" data-id="${f.id}" aria-label="Więcej">+</button>
+                        </div>
+                    </div>`).join('');
+            }
+
+            const missing = Math.max(0, FREE_SHIPPING - subtotal);
+            drawer.querySelector('.ship-text').textContent = count === 0
+                ? `Darmowa dostawa od ${money.format(FREE_SHIPPING)}`
+                : missing > 0 ? `Brakuje ${money.format(missing)} do darmowej dostawy` : 'Masz darmową dostawę!';
+            drawer.querySelector('.ship .bar i').style.width = Math.min(100, subtotal / FREE_SHIPPING * 100) + '%';
+            drawer.querySelector('.sum-items').textContent = money.format(subtotal);
+            drawer.querySelector('.sum-ship').textContent = count === 0 ? '—' : shipping ? money.format(shipping) : 'gratis';
+            drawer.querySelector('.sum-total').textContent = money.format(subtotal + shipping);
+            const checkout = drawer.querySelector('[data-act="checkout"]');
+            checkout.disabled = count === 0;
+            checkout.style.opacity = count === 0 ? 0.45 : 1;
+            if (count === 0) drawer.querySelector('.checkout-note').classList.remove('show');
+        }
+
+        // Kliknięcia w panelach (delegacja)
+        drawer.addEventListener('click', e => {
+            const btn = e.target.closest('[data-act]');
+            if (!btn) return;
+            const { act, id } = btn.dataset;
+            if (act === 'add') { addToCart(id, false); if (openPanel === 'smaki') btn.textContent = 'Dodano ✓'; }
+            if (act === 'inc') { cart[id]++; updateCartBadge(); }
+            if (act === 'dec') { cart[id] = Math.max(0, cart[id] - 1); updateCartBadge(); }
+            if (act === 'remove') { cart[id] = 0; updateCartBadge(); }
+            if (act === 'pick') {
+                const i = Number(btn.dataset.i);
+                closeDrawer(() => selectFlavor(i));
+            }
+            if (act === 'checkout') {
+                drawer.querySelector('.checkout-note').classList.add('show');
+                if (hasGsap) gsap.fromTo(btn, { x: -6 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' });
+            }
+            if (act === 'new-message') {
+                const form = drawer.querySelector('.form');
+                form.reset();
+                form.style.display = '';
+                drawer.querySelector('.success').classList.remove('show');
+                form.querySelector('input').focus();
+            }
         });
+
+        // Formularz kontaktowy (demo — nic nie wysyła)
+        drawer.querySelector('.form').addEventListener('submit', e => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+            const name = form.elements.name.value.trim();
+            drawer.querySelector('.success-title').textContent = `Dzięki, ${name}!`;
+            form.style.display = 'none';
+            const success = drawer.querySelector('.success');
+            success.classList.add('show');
+            if (hasGsap) gsap.fromTo(success, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' });
+            success.querySelector('button').focus();
+        });
+
+        // =========================================================
+        // PANELE — otwieranie i zamykanie
+        // =========================================================
+        const animItems = panel => panel.querySelectorAll('[data-anim]');
+
+        function showPanel(panel) {
+            panels.forEach(p => p.classList.toggle('active', p === panel));
+            kickerEl.textContent = panel.dataset.kicker;
+            titleEl.textContent = panel.dataset.title;
+            const scroller = panel.querySelector('.panel-scroll');
+            if (scroller) scroller.scrollTop = 0;
+        }
+
+        function prepare(name) {
+            if (name === 'sklad') { skladFlavor = currentFlavor; renderSklad(); }
+            if (name === 'smaki') renderSmaki();
+            if (name === 'koszyk') renderCart();
+        }
+
+        function openDrawer(name, trigger) {
+            const panel = panels.find(p => p.dataset.panel === name);
+            if (!panel) return;
+            closeMenu();
+            setActiveNav(name);
+            if (openPanel === name) return;
+
+            const wasOpen = !!openPanel;
+            if (!wasOpen) returnFocus = trigger || document.activeElement;
+            openPanel = name;
+            drawer.inert = false;
+            body.classList.add('drawer-open');
+
+            if (!hasGsap) {
+                prepare(name);
+                showPanel(panel);
+                drawer.classList.add('is-open');
+                scrim.classList.add('is-open');
+                drawer.querySelector('.drawer-close').focus();
+                return;
+            }
+
+            if (drawerTl) drawerTl.kill();
+
+            if (wasOpen) {
+                // Panel już otwarty — szybka zamiana treści
+                drawerTl = gsap.timeline()
+                    .to([drawerTitles, drawerPanels], { opacity: 0, y: 8, duration: 0.18, ease: 'power2.in' })
+                    .add(() => { prepare(name); showPanel(panel); })
+                    .to([drawerTitles, drawerPanels], { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' })
+                    .add(() => {
+                        gsap.fromTo(animItems(panel), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, stagger: 0.05, ease: 'power3.out' });
+                    }, '<');
+                return;
+            }
+
+            prepare(name);
+            showPanel(panel);
+            const from = isSheet() ? { xPercent: 0, yPercent: 105 } : { xPercent: 110, yPercent: 0 };
+            gsap.set([drawerTitles, drawerPanels], { opacity: 1, y: 0 });
+            drawerTl = gsap.timeline()
+                .to(scrim, { autoAlpha: 1, duration: 0.4, ease: 'power2.out' }, 0)
+                .fromTo(drawer, { autoAlpha: 1, ...from }, { xPercent: 0, yPercent: 0, duration: 0.75, ease: 'expo.out' }, 0)
+                .fromTo(drawerTitles, { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.6, ease: 'power3.out' }, 0.15)
+                .fromTo(animItems(panel), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.06, ease: 'power3.out' }, 0.2);
+            setTimeout(() => drawer.querySelector('.drawer-close').focus({ preventScroll: true }), 60);
+        }
+
+        function closeDrawer(after) {
+            if (!openPanel) { if (after) after(); return; }
+            openPanel = null;
+            setActiveNav(null);
+            body.classList.remove('drawer-open');
+            drawer.inert = true;
+            const done = () => {
+                if (returnFocus && document.contains(returnFocus)) returnFocus.focus({ preventScroll: true });
+                returnFocus = null;
+                if (after) after();
+            };
+
+            if (!hasGsap) {
+                drawer.classList.remove('is-open');
+                scrim.classList.remove('is-open');
+                done();
+                return;
+            }
+
+            if (drawerTl) drawerTl.kill();
+            const to = isSheet() ? { xPercent: 0, yPercent: 105 } : { xPercent: 110, yPercent: 0 };
+            drawerTl = gsap.timeline({ onComplete: done })
+                .to(drawer, { ...to, duration: 0.5, ease: 'power3.in' }, 0)
+                .to(scrim, { autoAlpha: 0, duration: 0.4, ease: 'power2.in' }, 0.1)
+                .set(drawer, { autoAlpha: 0 });
+        }
+
+        // Wyzwalacze
+        document.querySelectorAll('[data-open]').forEach(el => {
+            el.addEventListener('click', e => {
+                e.preventDefault();
+                openDrawer(el.dataset.open, el);
+            });
+        });
+        navItems.filter(l => !l.dataset.open).forEach(l => l.addEventListener('click', e => {
+            e.preventDefault();
+            closeMenu();
+            closeDrawer();
+        }));
+        document.querySelector('.logo').addEventListener('click', e => { e.preventDefault(); closeMenu(); closeDrawer(); });
+        drawer.querySelector('.drawer-close').addEventListener('click', () => closeDrawer());
+        scrim.addEventListener('click', () => closeDrawer());
+
+        // Klawiatura: Esc zamyka, Tab nie ucieka poza panel
+        document.addEventListener('keydown', e => {
+            if (!openPanel) {
+                if (e.key === 'Escape') closeMenu();
+                return;
+            }
+            if (e.key === 'Escape') { e.preventDefault(); closeDrawer(); return; }
+            if (e.key !== 'Tab') return;
+            const focusables = Array.from(drawer.querySelectorAll('button, a[href], input, select, textarea'))
+                .filter(el => !el.disabled && el.offsetParent !== null);
+            if (!focusables.length) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        });
+
+        updateCartBadge();
 
         // =========================================================
         // EKRAN ŁADOWANIA + ANIMACJA WEJŚCIA
